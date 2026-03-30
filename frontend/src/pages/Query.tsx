@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import API_BASE from '../config/api';
 
 interface ChatMessage {
     id: number;
@@ -14,7 +15,7 @@ export default function Query() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/query/history')
+        fetch(`${API_BASE}/api/query/history`)
             .then(res => res.json())
             .then(data => {
                 setMessages(data);
@@ -38,7 +39,7 @@ export default function Query() {
         setMessages(prev => [...prev, userMsg]);
         setLoading(true);
 
-        fetch('http://localhost:8000/api/query/ask', {
+        fetch(`${API_BASE}/api/query/ask`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: userText })

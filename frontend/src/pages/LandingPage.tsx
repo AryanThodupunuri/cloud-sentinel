@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import API_BASE from '../config/api';
 
 interface ConnectModalProps {
     onClose: () => void;
@@ -28,7 +29,7 @@ function AWSConnectModal({ onClose }: ConnectModalProps) {
         setErrorMsg('');
 
         try {
-            const res = await fetch('http://localhost:8000/api/auth/aws/connect', {
+            const res = await fetch(`${API_BASE}/api/auth/aws/connect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -44,7 +45,7 @@ function AWSConnectModal({ onClose }: ConnectModalProps) {
                 setAccountId(data.account_id);
                 setStep('success');
                 // Run agents in background
-                fetch('http://localhost:8000/api/agents/run', { method: 'POST' }).catch(() => {});
+                fetch(`${API_BASE}/api/agents/run`, { method: 'POST' }).catch(() => {});
                 setTimeout(() => navigate('/app/overview'), 2000);
             } else {
                 setErrorMsg(data.detail || 'Failed to connect. Please check your credentials.');

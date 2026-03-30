@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MetricCard } from '../components/ui/MetricCard';
+import API_BASE from '../config/api';
 
 interface Recommendation {
     id: string;
@@ -15,7 +16,7 @@ export default function Recommendations() {
     const [loading, setLoading] = useState(true);
 
     const fetchRecommendations = () => {
-        fetch('http://localhost:8000/api/recommendations')
+        fetch(`${API_BASE}/api/recommendations`)
             .then(res => res.json())
             .then(data => {
                 setRecommendations(data);
@@ -28,7 +29,7 @@ export default function Recommendations() {
     }, []);
 
     const processApply = (id: string) => {
-        fetch(`http://localhost:8000/api/recommendations/${id}/apply`, { method: 'POST' })
+        fetch(`${API_BASE}/api/recommendations/${id}/apply`, { method: 'POST' })
             .then(res => res.json())
             .then(() => {
                 fetchRecommendations(); // Refresh list to show applied state

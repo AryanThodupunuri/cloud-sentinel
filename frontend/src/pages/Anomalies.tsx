@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AlertBadge } from '../components/ui/AlertBadge';
+import API_BASE from '../config/api';
 
 interface Anomaly {
     id: string;
@@ -19,7 +20,7 @@ export default function Anomalies() {
     const [loading, setLoading] = useState(true);
 
     const fetchAnomalies = () => {
-        fetch('http://localhost:8000/api/anomalies')
+        fetch(`${API_BASE}/api/anomalies`)
             .then(res => res.json())
             .then(data => {
                 setAnomalies(data);
@@ -32,7 +33,7 @@ export default function Anomalies() {
     }, []);
 
     const processAcknowledge = (id: string) => {
-        fetch(`http://localhost:8000/api/anomalies/${id}/acknowledge`, { method: 'POST' })
+        fetch(`${API_BASE}/api/anomalies/${id}/acknowledge`, { method: 'POST' })
             .then(res => res.json())
             .then(() => {
                 fetchAnomalies(); // Refresh the list
