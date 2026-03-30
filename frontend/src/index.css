@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0a0a0b;
+  --color-bg-secondary: #0f0f10;
+  --color-surface: #111214;
+  --color-surface-raised: #161719;
+  --color-border: #1e1f22;
+  --color-border-hover: #2e2f33;
+  --color-text-primary: #e8e6df;
+  --color-text-secondary: #7a7870;
+  --color-text-muted: #3d3c39;
+
+  --color-accent-red: #c0392b;
+  --color-accent-red-dim: #7a1f18;
+  --color-accent-amber: #d4590a;
+  --color-accent-teal: #1e6e6a;
+  --color-accent-green: #3a5f3a;
+  --color-white-glyph: #f0ede8;
+
+  --font-display: "Space Mono", "Courier New", monospace;
+  --font-body: "IBM Plex Mono", "Courier Prime", monospace;
+  --font-ui: "IBM Plex Mono", monospace;
+
+  /* Landing Page Colors */
+  --color-primary: #bf3a2b;
+  --color-primary-dark: #8a2a20;
+  --color-background-light: #f8f6f6;
+  --color-background-dark: #171212;
+  --color-surface-dark: #251e1d;
+  --color-border-dark: #372b2a;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    margin: 0;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+  }
+
+}
+
+/* Custom scrollbar for terminal look */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background-dark, #171212);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark, #372b2a);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary, #bf3a2b);
+}
+
+/* Terminal blinking cursor animation */
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
