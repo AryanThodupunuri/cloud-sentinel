@@ -10,6 +10,7 @@ from core.database import get_db, Recommendation, AgentLog, OptimizationRecommen
 from pydantic import BaseModel
 from typing import Optional
 from agents.compute_optimizer_agent import run_compute_optimizer_agent
+from agents.idle_resource_agent import run_idle_resource_agent
 
 router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 
@@ -51,10 +52,23 @@ class ComputeScanRequest(BaseModel):
     account_id: Optional[str] = None
 
 
+class IdleScanRequest(BaseModel):
+    connection_id: Optional[int] = None
+    account_id: Optional[str] = None
+    region: Optional[str] = "us-east-1"
+    lookback_days: Optional[int] = 14
+
+
 @router.post("/compute-optimizer/scan")
 def scan_compute_optimizer(req: ComputeScanRequest, db: Session = Depends(get_db)):
     # Prefer connection_id; agent resolves account_id if needed
     result = run_compute_optimizer_agent(db, connection_id=req.connection_id, account_id=req.account_id)
+    return result
+
+
+@router.post("/idle-resources/scan")
+def scan_idle_resources(req: IdleScanRequest, db: Session = Depends(get_db)):
+    result = run_idle_resource_agent(db, connection_id=req.connection_id, account_id=req.account_id, region=req.region, lookback_days=req.lookback_days)
     return result
 
 

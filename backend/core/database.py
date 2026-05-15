@@ -146,6 +146,22 @@ class OptimizationRecommendation(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
+class ActionPlan(Base):
+    __tablename__ = "action_plans"
+    id = Column(Integer, primary_key=True, index=True)
+    recommendation_id = Column(Integer, index=True)
+    account_id = Column(String(100), index=True)
+    action_type = Column(String(100))
+    status = Column(String(50), default="pending_review")
+    risk_level = Column(String(50), nullable=True)
+    proposed_change = Column(JSON, nullable=True)
+    rollback_plan = Column(Text, nullable=True)
+    approval_required = Column(Boolean, default=True)
+    external_url = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
 def get_db():
     db = SessionLocal()
     try:

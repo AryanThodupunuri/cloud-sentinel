@@ -17,6 +17,7 @@ from routers.recommendations import router as recommendations_router
 from routers.query import router as query_router
 from routers.agents import router as agents_router
 from routers.cost import router as cost_router
+from routers.action_plans import router as action_plans_router
 
 app = FastAPI(
     title="CloudSentinel Backend",
@@ -50,6 +51,7 @@ app.include_router(recommendations_router)
 app.include_router(query_router)
 app.include_router(agents_router)
 app.include_router(cost_router)
+app.include_router(action_plans_router)
 
 
 @app.on_event("startup")

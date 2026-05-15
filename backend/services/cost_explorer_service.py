@@ -63,7 +63,8 @@ def generate_demo_daily_costs(days_back: int = 90) -> List[dict]:
     Returns list of records with date/service_name/cost/currency.
     """
     import random
-
+    # Use a fixed seed for demo data to make tests deterministic and idempotent
+    random.seed(0)
     services = [
         "Amazon EC2",
         "Amazon RDS",

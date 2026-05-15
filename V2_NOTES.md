@@ -93,3 +93,71 @@ curl "http://127.0.0.1:8000/api/recommendations/history?account_id=demo-unknown"
 Notes:
 - Real AWS mode requires Compute Optimizer to be enabled and an IAM role with compute-optimizer:GetEC2InstanceRecommendations and compute-optimizer:GetEBSVolumeRecommendations.
 - The agent uses AssumeRole and never stores raw AWS credentials.
+
+Step 5: CloudWatch-based idle EC2 detection
+
+- New agent: `backend/agents/idle_resource_agent.py` implements CloudWatch-based idle EC2 detection.
+- New route: POST /api/recommendations/idle-resources/scan
+  - Body: {"connection_id": <int>, "account_id": "...", "region": "us-east-1", "lookback_days": 14}
+  - Demo mode: when no AssumeRole connection exists, seeds a demo idle EC2 recommendation.
+  - Real mode: uses AssumeRole session to call EC2 describe_instances and CloudWatch metrics (CPUUtilization, NetworkIn, NetworkOut) over the lookback window and flags idle instances.
+
+Example demo curl:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/recommendations/idle-resources/scan \
+  -H "Content-Type: application/json" \
+  -d '{"account_id": "demo-123456789012", "region": "us-east-1", "lookback_days": 14}'
+```
+
+Fetch history for idle recs:
+
+```bash
+curl "http://127.0.0.1:8000/api/recommendations/history?account_id=demo-123456789012" | jq
+```
+
+Required IAM permissions for real mode:
+
+- ec2:DescribeInstances
+- cloudwatch:GetMetricStatistics
+- cloudwatch:GetMetricData (optional for batching)
+
+Notes:
+- This agent only creates reviewable recommendations and does not perform any destructive actions (stop/terminate/resize).
+- Thresholds for idle detection are defined near the top of `idle_resource_agent.py` and are tunable.
+
+Step 6: Action Plans
+
+- New model: `ActionPlan` (`backend/core/database.py`) stores reviewable remediation workflows linked to `OptimizationRecommendation`.
+- New service: `backend/services/action_plan_service.py` provides `create_action_plan_from_recommendation` which builds idempotent action plans based on recommendation types.
+- New routes: POST /api/recommendations/{recommendation_id}/action-plan, GET /api/action-plans, POST /api/action-plans/{id}/approve, POST /api/action-plans/{id}/dismiss
+
+Example curls:
+
+Create action plan:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/recommendations/1/action-plan \
+  -H "Content-Type: application/json"
+```
+
+List action plans:
+
+```bash
+curl "http://127.0.0.1:8000/api/action-plans?account_id=demo-123456789012" | jq
+```
+
+Approve an action plan:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/action-plans/1/approve
+```
+
+Dismiss an action plan:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/action-plans/1/dismiss
+```
+
+Notes:
+- Action plans are review-only at this stage. No destructive actions are executed.
