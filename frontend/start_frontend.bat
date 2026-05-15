@@ -1,7 +1,7 @@
 @echo off
-title CloudWise AI - Frontend (Vite Dev Server)
+title CloudSentinel - Frontend (Vite Dev Server)
 echo =========================================
-echo  CloudWise AI - React Frontend (Port 5173)
+echo  CloudSentinel - React Frontend (Port 5173)
 echo =========================================
 echo.
 

@@ -1,6 +1,6 @@
-# ☁️ CloudWise AI
+# ☁️ CloudSentinel
 
-CloudWise AI is a complete, multi-agent cloud cost optimization platform. It utilizes a state-of-the-art AI architecture to connect to your cloud provider (AWS), analyze your bill, detect anomalies, and suggest actionable cost-saving strategies.
+CloudSentinel is a complete, multi-agent cloud cost optimization platform. It utilizes a state-of-the-art AI architecture to connect to your cloud provider (AWS), analyze your bill, detect anomalies, and suggest actionable cost-saving strategies.
 
 ## ✨ Features
 

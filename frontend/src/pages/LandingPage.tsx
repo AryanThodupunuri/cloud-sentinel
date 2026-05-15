@@ -9,8 +9,8 @@ interface ConnectModalProps {
 function AWSConnectModal({ onClose }: ConnectModalProps) {
     const navigate = useNavigate();
     const [step, setStep] = useState<'form' | 'connecting' | 'success' | 'error'>('form');
-    const [accessKey, setAccessKey] = useState('');
-    const [secretKey, setSecretKey] = useState('');
+    const [roleArn, setRoleArn] = useState('');
+    const [externalId, setExternalId] = useState('');
     const [region, setRegion] = useState('us-east-1');
     const [errorMsg, setErrorMsg] = useState('');
     const [accountId, setAccountId] = useState('');
@@ -23,9 +23,8 @@ function AWSConnectModal({ onClose }: ConnectModalProps) {
 
     const handleConnect = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!accessKey.trim() || !secretKey.trim()) return;
-
-        setStep('connecting');
+    // Allow demo mode if roleArn is empty
+    setStep('connecting');
         setErrorMsg('');
 
         try {
@@ -33,8 +32,8 @@ function AWSConnectModal({ onClose }: ConnectModalProps) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    access_key_id: accessKey.trim(),
-                    secret_access_key: secretKey.trim(),
+                    role_arn: roleArn.trim() || undefined,
+                    external_id: externalId.trim() || undefined,
                     region,
                 }),
             });
@@ -79,36 +78,37 @@ function AWSConnectModal({ onClose }: ConnectModalProps) {
                     {step === 'form' && (
                         <>
                             <p className="text-[#7a7870] text-xs mb-6 font-mono leading-relaxed border-l-2 border-[#bf3a2b] pl-3">
-                                Grant CloudWise AI read-only access to your AWS Cost Explorer and CloudWatch.
+                                Grant CloudSentinel read-only access to your AWS Cost Explorer and CloudWatch.
                                 Your credentials are encrypted and used only for cost analysis.
                             </p>
 
                             <form onSubmit={handleConnect} className="space-y-4">
                                 <div>
-                                    <label className="block text-[#7a7870] text-xs font-mono uppercase tracking-wider mb-2">
-                                        AWS Access Key ID
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={accessKey}
-                                        onChange={e => setAccessKey(e.target.value)}
-                                        placeholder="AKIAIOSFODNN7EXAMPLE"
-                                        className="w-full bg-[#0c0a0a] border border-[#372b2a] text-white px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#bf3a2b] transition-colors"
-                                        required
-                                    />
+                                    <div>
+                                        <label className="block text-[#7a7870] text-xs font-mono uppercase tracking-wider mb-2">
+                                            AWS Role ARN
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={roleArn}
+                                            onChange={e => setRoleArn(e.target.value)}
+                                            placeholder="arn:aws:iam::123456789012:role/CloudSentinelReadOnly"
+                                            className="w-full bg-[#0c0a0a] border border-[#372b2a] text-white px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#bf3a2b] transition-colors"
+                                        />
+                                        <p className="text-[#3d3c39] text-[10px] font-mono mt-2">If you don't have a role, leave blank to use demo mode.</p>
+                                    </div>
                                 </div>
 
                                 <div>
                                     <label className="block text-[#7a7870] text-xs font-mono uppercase tracking-wider mb-2">
-                                        AWS Secret Access Key
+                                        External ID (optional)
                                     </label>
                                     <input
-                                        type="password"
-                                        value={secretKey}
-                                        onChange={e => setSecretKey(e.target.value)}
-                                        placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                                        type="text"
+                                        value={externalId}
+                                        onChange={e => setExternalId(e.target.value)}
+                                        placeholder="Optional external id for AssumeRole trust"
                                         className="w-full bg-[#0c0a0a] border border-[#372b2a] text-white px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#bf3a2b] transition-colors"
-                                        required
                                     />
                                 </div>
 
@@ -144,9 +144,41 @@ function AWSConnectModal({ onClose }: ConnectModalProps) {
                                 </div>
                             </form>
 
-                            <p className="text-[#3d3c39] text-[10px] font-mono mt-4 text-center">
-                                🔒 Credentials are stored encrypted. CloudWise uses read-only IAM permissions.
+                                <p className="text-[#3d3c39] text-[10px] font-mono mt-4 text-center">
+                                🔒 CloudSentinel does not store raw AWS secret keys. Use Role ARN for production or leave blank to run demo mode.
                             </p>
+                            <div className="mt-4 text-center">
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        // Quick demo mode: close modal and run agents
+                                        setStep('connecting');
+                                        try {
+                                            const res = await fetch(`${API_BASE}/api/auth/aws/connect`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({}),
+                                            });
+                                            const data = await res.json();
+                                            if (res.ok) {
+                                                setAccountId(data.account_id || 'demo');
+                                                setStep('success');
+                                                fetch(`${API_BASE}/api/agents/run`, { method: 'POST' }).catch(() => {});
+                                                setTimeout(() => navigate('/app/overview'), 1200);
+                                            } else {
+                                                setErrorMsg(data.detail || 'Unable to start demo mode');
+                                                setStep('error');
+                                            }
+                                        } catch (e) {
+                                            setErrorMsg('Cannot start demo mode. Is backend running?');
+                                            setStep('error');
+                                        }
+                                    }}
+                                    className="mt-3 w-full bg-[#2b2b2b] hover:bg-[#1f1f1f] text-white py-2 text-sm font-bold tracking-wider uppercase transition-colors border border-[#372b2a]"
+                                >
+                                    Use Demo Mode
+                                </button>
+                            </div>
                         </>
                     )}
 
@@ -225,7 +257,7 @@ export default function LandingPage() {
                 <div className="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <span className="material-symbols-outlined text-primary text-2xl">terminal</span>
-                        <h2 className="text-white text-lg font-bold tracking-tight">CLOUDWISE//AI</h2>
+                        <h2 className="text-white text-lg font-bold tracking-tight">CLOUDSENTINEL</h2>
                     </div>
                     <nav className="hidden md:flex items-center gap-8">
                         <a className="text-[#ded2ad] hover:text-white text-sm font-medium transition-colors" href="#">// SOLUTIONS</a>
@@ -300,7 +332,7 @@ export default function LandingPage() {
                                 {/* Terminal Body */}
                                 <div className="p-6 h-[320px] overflow-y-auto flex flex-col gap-2 text-gray-300">
                                     <div className="flex gap-2">
-                                        <span className="text-green-500">root@cloudwise:~#</span>
+                                        <span className="text-green-500">root@cloudsentinel:~#</span>
                                         <span className="text-white">./init_agents.sh --verbose</span>
                                     </div>
                                     <div className="pl-4 text-text-muted">
@@ -311,7 +343,7 @@ export default function LandingPage() {
                                     </div>
 
                                     <div className="flex gap-2 mt-2">
-                                        <span className="text-green-500">root@cloudwise:~#</span>
+                                        <span className="text-green-500">root@cloudsentinel:~#</span>
                                         <span className="text-white">tail -f /var/log/activity.log</span>
                                     </div>
                                     <div className="pl-4 grid gap-1 font-mono text-xs">
@@ -346,7 +378,7 @@ export default function LandingPage() {
                                             <span>System optimal. Efficiency rating: 98.4%</span>
                                         </div>
                                         <div className="flex gap-3 mt-2">
-                                            <span className="text-green-500">root@cloudwise:~#</span>
+                                            <span className="text-green-500">root@cloudsentinel:~#</span>
                                             <span className="animate-blink bg-white w-2 h-4 block"></span>
                                         </div>
                                     </div>
@@ -544,7 +576,7 @@ export default function LandingPage() {
                         <div className="col-span-2 lg:col-span-2 flex flex-col gap-4">
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="material-symbols-outlined text-primary text-2xl">terminal</span>
-                                <h2 className="text-white text-lg font-bold tracking-tight">CLOUDWISE//AI</h2>
+                                <h2 className="text-white text-lg font-bold tracking-tight">CLOUDSENTINEL</h2>
                             </div>
                             <p className="text-[#ded2ad] text-sm max-w-xs leading-relaxed">
                                 The industrial standard for autonomous cloud cost optimization. Built for scale. Engineered for efficiency.
@@ -574,7 +606,7 @@ export default function LandingPage() {
                     </div>
                     <div className="border-t border-border-dark pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-[#ded2ad] text-xs">
-                            © 2024 CLOUDWISE AI SYSTEMS. ALL RIGHTS RESERVED.
+                            © 2024 CLOUDSENTINEL SYSTEMS. ALL RIGHTS RESERVED.
                         </p>
                         <div className="flex gap-6">
                             <div className="flex items-center gap-2">

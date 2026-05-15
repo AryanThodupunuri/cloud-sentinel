@@ -100,7 +100,7 @@ def _fallback_answer(context: str, query: str) -> str:
 
     else:
         return (
-            "## ☁️ CloudWise AI — Cloud Analysis\n\n"
+            "## ☁️ CloudSentinel — Cloud Analysis\n\n"
             "Your 4-agent pipeline has analyzed your infrastructure:\n\n"
             "**Summary:**\n"
             "• 💰 Top cost driver: Amazon EC2 (consider Reserved Instances)\n"
@@ -136,7 +136,7 @@ def analyze_cloud_data(context: str, query: str) -> str:
     RAG-powered analysis: use retrieved context + user query to produce insightful answer.
     Falls back to rule-based context analysis if Groq is unavailable.
     """
-    system_prompt = """You are CloudWise AI, an expert cloud cost optimization assistant.
+    system_prompt = """You are CloudSentinel, an expert cloud cost optimization assistant.
 You analyze AWS, Azure, and GCP cloud infrastructure costs, detect anomalies, and suggest optimizations.
 Respond in clear, concise, professional markdown. Use bullet points where appropriate.
 When you reference cost data, be specific with numbers.

@@ -61,7 +61,7 @@ export default function Query() {
                 <div className="flex-1 p-8 overflow-y-auto space-y-6">
                     {messages.map(msg => (
                         <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                            <div className="text-micro text-text-muted mb-1 uppercase tracking-widest">{msg.role === 'user' ? 'You' : 'CloudWise AI'}</div>
+                            <div className="text-micro text-text-muted mb-1 uppercase tracking-widest">{msg.role === 'user' ? 'You' : 'CloudSentinel'}</div>
                             <div className={`p-4 font-ui max-w-[80%] ${msg.role === 'user' ? 'bg-bg-primary border border-border text-text-primary' : 'bg-accent-red/10 border border-accent-red text-text-primary'}`}>
                                 {msg.text}
                             </div>
@@ -70,7 +70,7 @@ export default function Query() {
                     ))}
                     {loading && messages.length > 0 && (
                         <div className="flex flex-col items-start animate-pulse">
-                            <div className="text-micro text-text-muted mb-1 uppercase tracking-widest">CloudWise AI</div>
+                            <div className="text-micro text-text-muted mb-1 uppercase tracking-widest">CloudSentinel</div>
                             <div className="p-4 font-ui bg-accent-red/10 border border-accent-red text-text-primary">
                                 Analyzing request...
                             </div>

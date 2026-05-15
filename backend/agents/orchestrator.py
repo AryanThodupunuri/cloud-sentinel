@@ -29,8 +29,14 @@ def run_all_agents(db: Session) -> dict:
     
     # Get cloud connection if any
     connection = db.query(CloudConnection).filter(
-        CloudConnection.status == "connected"
+        CloudConnection.connection_status == "connected"
     ).first()
+    demo_mode = False
+    if not connection:
+        # If no real connection, check if any demo connection exists
+        demo_conn = db.query(CloudConnection).filter(CloudConnection.connection_status == "demo").first()
+        if demo_conn:
+            demo_mode = True
 
     # Phase 1: Cost Analyzer
     print("[ORCHESTRATOR] Running Cost Analyzer Agent...")
@@ -81,7 +87,7 @@ def run_all_agents(db: Session) -> dict:
             if findings:
                 all_findings.extend(findings[:3])
 
-        ai_summary = generate_agent_summary("CloudWise Multi-Agent System", all_findings)
+        ai_summary = generate_agent_summary("CloudSentinel Multi-Agent System", all_findings)
         results["ai_summary"] = ai_summary
     except Exception as e:
         results["ai_summary"] = "Multi-agent analysis complete. Review individual agent findings for details."
@@ -95,4 +101,6 @@ def run_all_agents(db: Session) -> dict:
     db.commit()
 
     print("[ORCHESTRATOR] Pipeline complete!")
+    # Include connection metadata
+    results["demo_mode"] = demo_mode
     return results

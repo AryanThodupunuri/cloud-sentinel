@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cloudwise")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cloudsentinel")
 
 # Try PostgreSQL first, fallback to SQLite for easier setup
 try:
@@ -17,7 +17,7 @@ try:
         pass
 except Exception:
     print("[INFO] PostgreSQL not available, falling back to SQLite")
-    engine = create_engine("sqlite:///./cloudwise.db", connect_args={"check_same_thread": False})
+    engine = create_engine("sqlite:///./cloudsentinel.db", connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -29,10 +29,14 @@ class CloudConnection(Base):
     provider = Column(String(50), default="aws")
     account_id = Column(String(100), nullable=True)
     region = Column(String(50), default="us-east-1")
-    access_key_id = Column(String(200))
-    secret_access_key = Column(String(500))
-    status = Column(String(20), default="connected")
+    # For v2 we store only AssumeRole metadata. Raw AWS access keys are no longer stored.
+    role_arn = Column(String(500), nullable=True)
+    external_id = Column(String(200), nullable=True)
+    # connection_status replaces previous 'status' column name to be more explicit
+    connection_status = Column(String(20), default="connected")
+    last_validated_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 
 class Anomaly(Base):
@@ -90,6 +94,56 @@ class CostData(Base):
     end_date = Column(String(20))
     raw_data = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class CostDailyRecord(Base):
+    __tablename__ = "cost_daily_records"
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(String(100), index=True)
+    service_name = Column(String(200), index=True)
+    date = Column(String(20), index=True)  # YYYY-MM-DD
+    cost = Column(Float, default=0.0)
+    currency = Column(String(10), default="USD")
+    source = Column(String(50), default="cost_explorer")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class CostAnomaly(Base):
+    __tablename__ = "cost_anomalies"
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(String(100), index=True)
+    service_name = Column(String(200), index=True)
+    anomaly_date = Column(String(20), index=True)
+    current_cost = Column(Float, default=0.0)
+    baseline_cost = Column(Float, default=0.0)
+    percent_increase = Column(Float, default=0.0)
+    z_score = Column(Float, default=0.0)
+    severity = Column(String(20), default="low")
+    explanation = Column(Text)
+    source = Column(String(50), default="rolling_baseline")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    scan_job_id = Column(String(100), nullable=True)
+
+
+class OptimizationRecommendation(Base):
+    __tablename__ = "optimization_recommendations"
+    id = Column(Integer, primary_key=True, index=True)
+    account_id = Column(String(100), index=True)
+    resource_id = Column(String(200), index=True, nullable=True)
+    resource_arn = Column(String(500), index=True, nullable=True)
+    resource_type = Column(String(100))
+    service = Column(String(100))
+    region = Column(String(50), nullable=True)
+    recommendation_type = Column(String(100))
+    current_configuration = Column(JSON, nullable=True)
+    recommended_configuration = Column(JSON, nullable=True)
+    estimated_monthly_savings = Column(Float, nullable=True)
+    confidence = Column(String(50), nullable=True)
+    source = Column(String(50), default="compute_optimizer")
+    status = Column(String(50), default="open")
+    evidence = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 
 def get_db():

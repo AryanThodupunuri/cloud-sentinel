@@ -7,14 +7,17 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db, CloudConnection
-import boto3
+from core import aws_session
+from datetime import datetime
+import uuid
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 class AWSConnectRequest(BaseModel):
-    access_key_id: str
-    secret_access_key: str
+    # For v2 we accept a Role ARN and optional External ID. If omitted, demo mode is used.
+    role_arn: str = None
+    external_id: str = None
     region: str = "us-east-1"
 
 
@@ -31,40 +34,60 @@ def connect_aws(request: AWSConnectRequest, db: Session = Depends(get_db)):
     Validate AWS credentials using STS GetCallerIdentity.
     If valid, store in DB and return connection_id.
     """
-    account_id = "demo-account"
-    connection_successful = False
-
-    # Try to validate with real AWS STS
-    try:
-        sts = boto3.client(
-            "sts",
-            aws_access_key_id=request.access_key_id,
-            aws_secret_access_key=request.secret_access_key,
-            region_name=request.region,
-        )
-        identity = sts.get_caller_identity()
-        account_id = identity.get("Account", "unknown")
-        connection_successful = True
-        print(f"[AUTH] Real AWS connection verified. Account: {account_id}")
-    except Exception as e:
-        # Any failure (invalid creds, network, etc.) → fallback to demo mode
-        # This allows users to test the app without real AWS credentials
-        print(f"[AUTH] AWS STS validation failed ({type(e).__name__}): {e}")
-        print("[AUTH] Falling back to DEMO mode — app will use mock cloud data")
+    # Default to demo if no role_arn provided
+    if not request.role_arn:
+        print("[AUTH] No Role ARN provided — using DEMO mode")
         account_id = "demo-123456789012"
-        connection_successful = True
+        # Create or update a demo connection entry
+        existing = db.query(CloudConnection).filter(CloudConnection.provider == "aws").first()
+        if existing:
+            existing.connection_status = "demo"
+            existing.region = request.region
+            existing.updated_at = datetime.utcnow()
+            db.commit()
+            conn_id = existing.id
+        else:
+            conn = CloudConnection(
+                provider="aws",
+                account_id=account_id,
+                region=request.region,
+                connection_status="demo",
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            db.add(conn)
+            db.commit()
+            db.refresh(conn)
+            conn_id = conn.id
 
-    if not connection_successful:
-        raise HTTPException(status_code=401, detail="Could not validate AWS credentials")
+        return AWSConnectResponse(
+            success=True,
+            connection_id=conn_id,
+            account_id=account_id,
+            message="Demo mode enabled. No AWS Role ARN provided.",
+        )
 
-    # Store connection in DB
-    existing = db.query(CloudConnection).filter(
-        CloudConnection.access_key_id == request.access_key_id
-    ).first()
+    # Ensure there's an external_id (used by the customer when creating the IAM trust)
+    external_id = request.external_id or str(uuid.uuid4())
 
+    # Validate the role by attempting to assume it
+    result = aws_session.validate_assumed_role(request.role_arn, external_id)
+    if not result.get("status"):
+        # Clear error for user
+        err = result.get("error", "Could not assume role")
+        raise HTTPException(status_code=400, detail=f"AssumeRole failed: {err}")
+
+    account_id = result.get("account_id")
+
+    # Store or update the connection metadata without persisting raw keys
+    existing = db.query(CloudConnection).filter(CloudConnection.role_arn == request.role_arn).first()
     if existing:
-        existing.status = "connected"
+        existing.account_id = account_id
+        existing.external_id = external_id
+        existing.connection_status = "connected"
         existing.region = request.region
+        existing.last_validated_at = datetime.utcnow()
+        existing.updated_at = datetime.utcnow()
         db.commit()
         conn_id = existing.id
     else:
@@ -72,9 +95,12 @@ def connect_aws(request: AWSConnectRequest, db: Session = Depends(get_db)):
             provider="aws",
             account_id=account_id,
             region=request.region,
-            access_key_id=request.access_key_id,
-            secret_access_key=request.secret_access_key,
-            status="connected",
+            role_arn=request.role_arn,
+            external_id=external_id,
+            connection_status="connected",
+            last_validated_at=datetime.utcnow(),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
         )
         db.add(conn)
         db.commit()
@@ -85,7 +111,7 @@ def connect_aws(request: AWSConnectRequest, db: Session = Depends(get_db)):
         success=True,
         connection_id=conn_id,
         account_id=account_id,
-        message=f"Successfully connected to AWS account {account_id} in {request.region}",
+        message=f"Successfully validated Role ARN for AWS account {account_id} in {request.region}",
     )
 
 
@@ -93,7 +119,7 @@ def connect_aws(request: AWSConnectRequest, db: Session = Depends(get_db)):
 def get_auth_status(db: Session = Depends(get_db)):
     """Return all connected cloud accounts."""
     connections = db.query(CloudConnection).filter(
-        CloudConnection.status == "connected"
+        CloudConnection.connection_status.in_(["connected", "demo"])
     ).all()
     return [
         {
@@ -101,7 +127,10 @@ def get_auth_status(db: Session = Depends(get_db)):
             "provider": c.provider,
             "account_id": c.account_id,
             "region": c.region,
-            "status": c.status,
+            "connection_status": c.connection_status,
+            "role_arn": getattr(c, "role_arn", None),
+            "external_id": getattr(c, "external_id", None),
+            "last_validated_at": getattr(c, "last_validated_at", None),
         }
         for c in connections
     ]

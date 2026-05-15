@@ -16,7 +16,7 @@ export default function Sidebar() {
     return (
         <div className="fixed left-0 top-0 bottom-0 w-[220px] bg-bg-primary border-r border-border flex flex-col pt-4">
             <div className="px-6 pb-6">
-                <h1 className="font-display font-bold text-white-glyph text-xl tracking-widest">CLOUDWISE//AI</h1>
+                <h1 className="font-display font-bold text-white-glyph text-xl tracking-widest">CLOUDSENTINEL</h1>
             </div>
 
             <nav className="flex-1 flex flex-col gap-[2px]">

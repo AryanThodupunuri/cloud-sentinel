@@ -40,7 +40,7 @@ export default function Recommendations() {
         <div className="p-8 space-y-6">
             <h1 className="text-h2 font-display uppercase">AI Recommendations</h1>
             <p className="text-text-muted font-ui text-body">
-                Review automated optimizations suggested by the CloudWise AI agent.
+                Review automated optimizations suggested by the CloudSentinel agent.
             </p>
             <div className="grid grid-cols-3 gap-5 mb-8">
                 <MetricCard label="TOTAL SAVINGS OPPORTUNITY" value="$12,450" isRed={false} />
