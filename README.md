@@ -13,71 +13,11 @@ High-level flow (simplified):
 
 AWS AssumeRole / Demo Mode → Cost Explorer ingestion → CostDailyRecord storage → Rolling-baseline anomaly detection → Compute Optimizer recommendations → CloudWatch idle EC2 detection → OptimizationRecommendation table → ActionPlan generation → GitHub issue creation
 
-### Architecture diagram (Mermaid)
+### Architecture diagram
 
-```mermaid
-%% CloudSentinel architecture (component-style)
-flowchart LR
-   classDef backendFill fill:#f7fbff,stroke:#2b6cb0;
-   classDef extFill fill:#fff7ed,stroke:#d97706;
-   classDef ragFill fill:#ecfeff,stroke:#0ea5a4;
-   classDef demoStyle stroke-dasharray: 4 2;
+The repository contains a rendered architecture diagram. If you're viewing this on GitHub the image below will show the system layout. If you prefer the raw Mermaid source it's available at `design/architecture.mmd`.
 
-   user[User\n(Browser)] -->|UI requests| frontend[Frontend\nReact (Vite)\n"Dashboard & UI"]
-   frontend -->|HTTP| api[Backend API\nFastAPI\n"HTTP API / Controllers"]
-
-   subgraph Backend[Backend (FastAPI)]
-      direction TB
-      api --> agents_group[Agents\n(Cost Ingest, Anomaly, Compute Optimizer, Idle Agent, Orchestrator)]
-      api --> services_group[Services\n(Cost Explorer, ActionPlan, GitHub, LLM/RAG Service)]
-      api --> db[(SQL Database)\nCostDailyRecord, CostAnomaly,\nOptimizationRecommendation, ActionPlan]
-      agents_group --> services_group
-      services_group --> db
-      services_group --> rag_comp[ChromaDB\n+ Groq LLM]
-      rag_comp ---|vectors / prompts| services_group
-      agents_group --- demo[Demo Data Generator]
-   end
-   class Backend backendFill;
-
-   subgraph AWS[AWS (external)]
-      direction LR
-      aws_cost[Cost Explorer]
-      aws_compute[Compute Optimizer]
-      aws_cloudwatch[CloudWatch]
-      aws_ec2[EC2]
-      aws_sts[STS (AssumeRole)]
-   end
-   class AWS extFill;
-
-   services_group -->|AssumeRole via STS| aws_sts
-   agents_group -->|Fetch cost data| aws_cost
-   agents_group -->|Fetch compute recommendations| aws_compute
-   agents_group -->|Query metrics| aws_cloudwatch
-   agents_group -->|Describe instances| aws_ec2
-   aws_sts -->|short-lived creds| aws_cost
-   aws_sts --> aws_compute
-   aws_sts --> aws_cloudwatch
-   aws_sts --> aws_ec2
-
-   github[GitHub REST API\n(Issue creation)] ---|create issue| services_group
-
-   %% Demo-mode dashed connections
-   demo -.->|seeded cost + metrics (demo)| agents_group
-   demo -.->|seeded recommendations| services_group
-   class demo demoStyle;
-
-   %% Styling
-   class rag_comp ragFill;
-   class github extFill;
-
-   %% Legend
-   subgraph Legend["Legend"]
-      direction LR
-      L1[Dashed arrow = demo mode]:::demoStyle
-      L2[RAG/LLM components]:::ragFill
-      L3[External APIs]:::extFill
-   end
-```
+![CloudSentinel architecture](design/mermaid-diagram.svg)
 
 Key components:
 - React frontend (single-page app)
