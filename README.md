@@ -1,11 +1,8 @@
-# ☁️ CloudSentinel
-
-CloudSentinel is a complete, multi-agent cloud cost optimization platform. It utilizes a state-of-the-art AI architecture to connect to your cloud provider (AWS), analyze your bill, detect anomalies, and suggest actionable cost-saving strategies.
 # CloudSentinel
 
-Agentic AWS FinOps platform for cloud cost anomaly detection, optimization recommendations, and human-approved remediation workflows.
+CloudSentinel is an AWS FinOps platform for cloud cost anomaly detection, optimization recommendations, and human-reviewed remediation workflows.
 
-CloudSentinel connects to AWS using secure AssumeRole access or runs in a self-contained demo mode. It collects daily cost data, looks for unusual spending patterns using rolling baselines, brings in Compute Optimizer recommendations, detects idle EC2 instances via CloudWatch, and turns findings into reviewable ActionPlans. When desired, approved ActionPlans can be converted into GitHub issues so engineers can handle remediation in their normal workflow.
+CloudSentinel connects to AWS using secure AssumeRole access or runs in demo mode. It ingests daily cost data, detects unusual spending patterns using rolling baselines, imports Compute Optimizer findings, detects idle EC2 instances from CloudWatch metrics, and converts findings into reviewable ActionPlans. Approved ActionPlans can be converted into GitHub issues so teams can track remediation.
 
 ## Architecture overview
 
@@ -17,7 +14,7 @@ AWS AssumeRole / Demo Mode → Cost Explorer ingestion → CostDailyRecord stora
 
 The repository contains a rendered architecture diagram. If you're viewing this on GitHub the image below will show the system layout. If you prefer the raw Mermaid source it's available at `design/architecture.mmd`.
 
-![CloudSentinel architecture](design/mermaid-diagram.svg)
+![CloudSentinel architecture](design/mermaid-diagram.png)
 
 Key components:
 - React frontend (single-page app)
@@ -27,7 +24,7 @@ Key components:
 - Boto3 for AWS APIs (using STS AssumeRole)
 - GitHub REST API for creating issues
 
-The system intentionally does NOT perform destructive or automatic remediation. CloudSentinel focuses on analysis, evidence, and human-in-the-loop workflows: it produces recommendations and reviewable ActionPlans which can be converted to GitHub issues for engineers to action.
+The system intentionally does not perform destructive or automatic remediation. CloudSentinel focuses on analysis, evidence, and human-in-the-loop workflows. It produces recommendations and reviewable ActionPlans that can be converted to GitHub issues for engineering teams to act on.
 
 ## Features
 
@@ -42,8 +39,8 @@ CloudSentinel ships with these working features:
 - CostAnomaly persistence and listing
 - AWS Compute Optimizer integration (EC2 & EBS recommendations)
 - CloudWatch-based idle EC2 detection agent
-- Normalized OptimizationRecommendation storage (idempotent)
--- ActionPlan generation from recommendations with metadata:
+ - Normalized OptimizationRecommendation storage (idempotent)
+ - ActionPlan generation from recommendations with metadata:
    - risk level (low/medium/high)
    - proposed change payload (structured JSON showing current vs recommended)
    - rollback guidance (human-readable notes)
