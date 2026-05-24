@@ -1,0 +1,68 @@
+@startuml
+skinparam componentStyle rectangle
+title CloudSentinel - high level architecture
+
+actor User as Browser
+
+package "Frontend" {
+  [React (Vite)\nDashboard & UI] as Frontend
+}
+
+package "Backend (FastAPI)" {
+  [HTTP API / Controllers] as API
+  node Agents {
+    [Cost Ingestion Agent]
+    [Anomaly Detection Agent]
+    [Compute Optimizer Agent]
+    [Idle Resource Agent]
+    [Orchestrator]
+  }
+  node Services {
+    [Cost Explorer Service]
+    [Action Plan Service]
+    [GitHub Service]
+    [LLM / RAG Service]
+  }
+  database SQLDB as DB <<Database>>
+  component ChromaDB as VDB
+  component Groq as LLM
+  component Demo as DemoGenerator
+}
+
+package "AWS (external)" {
+  [Cost Explorer] as CE
+  [Compute Optimizer] as CO
+  [CloudWatch] as CW
+  [EC2] as EC2
+  [STS (AssumeRole)] as STS
+}
+
+component "GitHub REST API\n(Issues)" as GH
+
+Browser --> Frontend : UI traffic
+Frontend --> API : HTTP
+
+API --> Agents : trigger agents
+API --> Services : call services
+Services --> DB : persist records
+Services --> VDB : index evidence
+VDB --> Groq : vectors -> prompts
+Services --> STS : AssumeRole
+Agents --> CE : fetch cost
+Agents --> CO : fetch recommendations
+Agents --> CW : fetch metrics
+Agents --> EC2 : describe
+STS --> CE
+STS --> CO
+STS --> CW
+STS --> EC2
+
+Services --> GH : create issue (optional)
+DemoGenerator ..> Agents : dashed : seed demo data
+DemoGenerator ..> Services : dashed : seed demo recommendations
+
+note over API,GH
+  SAFE: analysis-only. No destructive AWS calls.
+end note
+
+@enduml

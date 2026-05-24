@@ -26,7 +26,7 @@ def get_history(db: Session = Depends(get_db)):
     if count == 0:
         welcome = ChatHistory(
             role="ai",
-            text="Hello! I'm CloudWise AI, your cloud cost optimization assistant. "
+            text="Hello! I'm CloudSentinel, your cloud cost optimization assistant. "
                  "I have access to your full cloud cost data, anomaly reports, and optimization recommendations. "
                  "Ask me anything — like 'What is my top cost driver?' or 'Where can I save money?'",
         )

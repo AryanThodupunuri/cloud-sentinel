@@ -1,0 +1,35 @@
+@startuml
+title CloudSentinel example flow: ingestion → anomaly → recommendation → action plan → GitHub
+
+actor User
+participant Frontend
+participant API
+participant IngestAgent
+participant AnomalyAgent
+participant RecoAgent
+participant DB
+participant RAG
+participant GitHub
+
+User -> Frontend: Trigger ingest/demo
+Frontend -> API: POST /api/cost/ingest-history
+API -> IngestAgent: start ingestion
+IngestAgent -> DB: upsert CostDailyRecord
+IngestAgent -> API: return status
+
+API -> AnomalyAgent: run detection
+AnomalyAgent -> DB: read costs
+AnomalyAgent -> DB: write CostAnomaly
+AnomalyAgent -> RAG: index evidence
+
+API -> RecoAgent: run compute-optimizer scan
+RecoAgent -> DB: upsert OptimizationRecommendation
+RecoAgent -> RAG: index evidence
+
+API -> DB: create ActionPlan (pending_review)
+Frontend -> API: Approve ActionPlan
+API -> GitHub: create issue (if enabled)
+GitHub --> API: issue URL
+API -> Frontend: return issue link
+
+@enduml

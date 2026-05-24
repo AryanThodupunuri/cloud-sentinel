@@ -1,7 +1,7 @@
 @echo off
-title CloudWise AI - Backend Server
+title CloudSentinel - Backend Server
 echo =========================================
-echo  CloudWise AI - FastAPI Backend (Port 8000)
+echo  CloudSentinel - FastAPI Backend (Port 8000)
 echo =========================================
 echo.
 

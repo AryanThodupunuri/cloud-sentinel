@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from core.database import Recommendation, AgentLog
 from core.vectorstore import ingest_documents
 import random
+from core import aws_session
 
 
 def run_optimization_agent(db: Session, connection=None) -> dict:
@@ -18,7 +19,7 @@ def run_optimization_agent(db: Session, connection=None) -> dict:
     recommendations_added = []
     findings = []
 
-    if connection:
+    if connection and getattr(connection, 'connection_status', None) == 'connected' and getattr(connection, 'role_arn', None):
         try:
             findings = _analyze_real_aws(connection)
         except Exception as e:
@@ -77,12 +78,8 @@ def _analyze_real_aws(connection) -> list[dict]:
 
     # Check EC2 instances
     try:
-        ec2 = boto3.client(
-            "ec2",
-            aws_access_key_id=connection.access_key_id,
-            aws_secret_access_key=connection.secret_access_key,
-            region_name=connection.region,
-        )
+        session = aws_session.get_assumed_role_session(connection.role_arn, connection.external_id)
+        ec2 = session.client("ec2", region_name=connection.region)
         reservations = ec2.describe_instances(
             Filters=[{"Name": "instance-state-name", "Values": ["running"]}]
         ).get("Reservations", [])

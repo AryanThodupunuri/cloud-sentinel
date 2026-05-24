@@ -12,6 +12,7 @@ from core.database import AgentLog, CostData, Recommendation
 from core.vectorstore import ingest_documents
 import json
 import random
+from core import aws_session
 
 
 def run_cost_analyzer(db: Session, connection=None) -> dict:
@@ -23,15 +24,11 @@ def run_cost_analyzer(db: Session, connection=None) -> dict:
     cost_records = []
     recommendations = []
 
-    if connection:
-        # Real AWS Cost Explorer
+    if connection and getattr(connection, 'connection_status', None) == 'connected' and getattr(connection, 'role_arn', None):
+        # Real AWS Cost Explorer using assumed role
         try:
-            client = boto3.client(
-                "ce",
-                aws_access_key_id=connection.access_key_id,
-                aws_secret_access_key=connection.secret_access_key,
-                region_name=connection.region,
-            )
+            session = aws_session.get_assumed_role_session(connection.role_arn, connection.external_id)
+            client = session.client("ce", region_name=connection.region)
             end = datetime.utcnow().date()
             start = end - timedelta(days=30)
 

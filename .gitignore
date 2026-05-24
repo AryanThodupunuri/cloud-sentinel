@@ -1,4 +1,4 @@
-# CloudWise AI
+# CloudSentinel
 
 # Environments
 .env
@@ -38,7 +38,7 @@ env/
 .env/
 
 # Databases & Storage
-cloudwise.db
+cloudsentinel.db
 chroma_data/
 *.sqlite3
 

@@ -1,5 +1,5 @@
 """
-CloudWise AI - FastAPI Backend
+CloudSentinel - FastAPI Backend
 Main entrypoint: initializes DB, ChromaDB, mounts all routers, sets up CORS
 """
 from fastapi import FastAPI
@@ -16,9 +16,11 @@ from routers.anomalies import router as anomalies_router
 from routers.recommendations import router as recommendations_router
 from routers.query import router as query_router
 from routers.agents import router as agents_router
+from routers.cost import router as cost_router
+from routers.action_plans import router as action_plans_router
 
 app = FastAPI(
-    title="CloudWise AI Backend",
+    title="CloudSentinel Backend",
     description="Multi-agent cloud cost optimization system with RAG and Groq LLM",
     version="1.0.0",
 )
@@ -48,12 +50,14 @@ app.include_router(anomalies_router)
 app.include_router(recommendations_router)
 app.include_router(query_router)
 app.include_router(agents_router)
+app.include_router(cost_router)
+app.include_router(action_plans_router)
 
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and run agents on first startup."""
-    print("[STARTUP] Initializing CloudWise AI Backend...")
+    print("[STARTUP] Initializing CloudSentinel Backend...")
 
     # Init DB tables
     init_db()
@@ -83,7 +87,7 @@ async def startup_event():
     finally:
         db.close()
 
-    print("[STARTUP] CloudWise AI Backend ready at http://localhost:8000")
+    print("[STARTUP] CloudSentinel Backend ready at http://localhost:8000")
     print("[STARTUP] API Docs: http://localhost:8000/docs")
 
 
@@ -91,7 +95,7 @@ async def startup_event():
 def root():
     return {
         "status": "online",
-        "service": "CloudWise AI Backend",
+    "service": "CloudSentinel Backend",
         "version": "1.0.0",
         "docs": "/docs",
     }

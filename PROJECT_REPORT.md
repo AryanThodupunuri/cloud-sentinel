@@ -1,10 +1,10 @@
-# CloudWise AI — Project Report
+# CloudSentinel — Project Report
 
-This document outlines the detailed architecture, decisions, and capabilities of the CloudWise AI platform following its complete migration to a Python FastAPI and multi-agent AI architecture.
+This document outlines the detailed architecture, decisions, and capabilities of the CloudSentinel platform following its complete migration to a Python FastAPI and multi-agent AI architecture.
 
 ## 1. Executive Summary
 
-CloudWise AI is a unified cloud cost optimization dashboard that connects to a user’s cloud infrastructure (via AWS STS identity services) and utilizes a sequence of four specialized AI agents to analyze costs, detect anomalies, suggest optimizations, and evaluate multi-cloud strategies.
+CloudSentinel is a unified cloud cost optimization dashboard that connects to a user’s cloud infrastructure (via AWS STS identity services) and utilizes a sequence of four specialized AI agents to analyze costs, detect anomalies, suggest optimizations, and evaluate multi-cloud strategies.
 
 The project recently completely transitioned its backend from a Node.js/TypeScript Express server to a **Python FastAPI** structure to better support advanced LLM orchestration, dynamic vector storage (ChromaDB), and persistent agent execution schemas.
 
@@ -33,7 +33,7 @@ The backend is structured into clear modular domains (`core/`, `agents/`, `route
 
 ## 3. The Multi-Agent System
 
-The defining feature of CloudWise AI is its multi-agent orchestration. Instead of a single monolithic analysis script, the system deploys 4 distinct agents:
+The defining feature of CloudSentinel is its multi-agent orchestration. Instead of a single monolithic analysis script, the system deploys 4 distinct agents:
 
 1. **Cost Analyzer Agent (`agents/cost_analyzer.py`)** 
    - **Role:** Extracts line-item billing data. In a production environment, this interfaces directly with AWS Cost Explorer (`ce` boto3 client). 
@@ -71,6 +71,6 @@ The `/app/query` route enables users to type plain English questions about their
 
 ## 5. Security & Deployment Posture
 
-- **`.gitignore` Strategy**: Strict blocking of `.env` files, `cloudwise.db` (SQL data), `chroma_data/` (vector embeddings), and `__pycache__`/`node_modules` guarantees that zero proprietary cloud metrics or API keys are pushed to version control.
+- **`.gitignore` Strategy**: Strict blocking of `.env` files, `cloudsentinel.db` (SQL data), `chroma_data/` (vector embeddings), and `__pycache__`/`node_modules` guarantees that zero proprietary cloud metrics or API keys are pushed to version control.
 - **AWS STS Security**: The backend never permanently stores the user's secret keys. It utilizes `get_caller_identity` strictly to validate the IAM connection for the current session.
 - **Extensibility**: The Python rewrite enables seamless future integration of PyTorch/TensorFlow for proprietary local anomaly models instead of relying purely on remote LLMs.
